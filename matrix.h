@@ -1,5 +1,9 @@
 #pragma once
 
+#include "linear_combination.h"
+#include "variable.h"
+#include "poly.h"
+
 #include <initializer_list>
 #include <iostream>
 #include <exception>
@@ -18,7 +22,7 @@ class Matrix {
 public:
     Matrix() {}
     Matrix(const Matrix& other): data_(other.data_){}
-    Matrix(size_t n, size_t m): data_(n, std::vector<T>(m, 0)) {}
+    Matrix(size_t n, size_t m): data_(n, std::vector<T>(m, T(0))) {}
     explicit Matrix(std::vector<std::vector<T>> data): data_(data) {
         for (int i = 0; i < data_.size(); ++i) {
             if (data_[i].size() != data_[0].size()) throw WrongSizeException();
@@ -39,14 +43,18 @@ public:
         data_ = other.data_;
     }
 
+    bool operator==(const Matrix& other) const = default;
+    bool operator!=(const Matrix& other) const = default;
+
     std::pair<size_t, size_t> size() const {
         return std::make_pair(data_.size(), data_[0].size());
     }
 
-    Matrix operator+(const Matrix& other) const {
+    template<typename P>
+    Matrix<decltype(T() + P())>  operator+(const Matrix<P>& other) const {
         if (other.size() != size()) throw WrongSizeException();
         auto [n, m] = size();
-        Matrix ans(n, m);
+        Matrix<decltype(T() + P())>  ans(n, m);
         for (int i = 0; i < n; ++i) {
             for (int j = 0; j < m; ++j) {
                 ans[i][j] = data_[i][j] + other[i][j];
@@ -66,11 +74,32 @@ public:
         return *this;
     }
 
-    Matrix operator*(const Matrix& other) const {
+    Matrix operator-() const {
+        auto [n, m] = size();
+        Matrix ans(data_);
+        for (size_t i = 0; i < n; ++i) {
+            for (size_t j = 0; j < m; ++j) {
+                ans[i][j] = -ans[i][j];
+            }
+        }
+        return ans;
+    }
+    
+    template<typename P>
+    Matrix<decltype(T() - P())> operator-(const Matrix<P>& other) const {
+        return *this + -other;
+    }
+
+    Matrix& operator-=(const Matrix& other) const {
+        return *this = *this - other;
+    }
+
+    template<typename P>
+    Matrix<decltype(T() * P())> operator*(const Matrix<P>& other) const {
         if (size().second != other.size().first) throw WrongSizeException();
         auto [n, m] = size();
         size_t k = other.size().second;
-        Matrix a(n, k);
+        Matrix<decltype(T() * P())> a(n, k);
         for (size_t i = 0; i < n; ++i) {
             for (size_t j = 0; j < m; ++j) {
                 for (size_t l = 0; l < k; ++l) {
@@ -181,6 +210,7 @@ public:
                 ans[i][j] = data_[i + start_i][j + start_j];
             }
         }
+        return ans;
     }
 
     T Trace() const {
@@ -191,7 +221,17 @@ public:
         }
     }
 
-protected:
+    static Matrix<LinearCombination<T>> MakeVariable(size_t n, size_t m) {
+        Matrix<LinearCombination<T>> res(n, m);
+        for (size_t i = 0; i < n; ++i) {
+            for (size_t j = 0; j < m; ++j) {
+                res[i][j] = Variable();
+            }
+        }
+        return res;
+    }
+
+private:
     std::vector<std::vector<T>> data_;
 };
 
@@ -223,12 +263,30 @@ template <typename T>
 class SquareMatrix : public Matrix<T> {
 public:
     SquareMatrix(int n): Matrix<T>(n, n) {}
+    explicit SquareMatrix(std::vector<std::vector<T>> data): Matrix<T>(data) {}
+    SquareMatrix(std::initializer_list<std::initializer_list<T>> data): Matrix<T>(data) {}
+    SquareMatrix(const Matrix<T>& m): Matrix<T>(m) {
+        if (m.size().first != m.size().second) throw WrongSizeException();
+    }
+    
     int size() const {
-        return size().first;
+        return Matrix<T>::size().first;
+    }
+    SquareMatrix operator+(const SquareMatrix& other) const {
+        return Matrix<T>::operator+(other);
+    }
+    SquareMatrix operator-(const SquareMatrix& other) const {
+        return Matrix<T>::operator-(other);
+    }
+    SquareMatrix operator*(const SquareMatrix& other) const {
+        return Matrix<T>::operator*(other);
+    }
+    SquareMatrix operator-() const {
+        return Matrix<T>::operator-();
     }
 
     SquareMatrix Power(size_t indicator) const {
-        if (indicator == 0) return IdentityMatrix();
+        if (indicator == 0) return IdentityMatrix(size());
         if (indicator % 2 == 0) return (*this * *this).Power(indicator / 2);
         return Power(indicator - 1) * *this;
     }
@@ -243,6 +301,20 @@ public:
         return ans.Slice(n, n, 0, n);
     }
 
+    Poly<T> CharPoly() const {
+        int n = size();
+        SquareMatrix<Poly<T>> ch(n);
+        for (size_t i = 0; i < n; ++i) {
+            for (size_t j = 0; j < n; ++j) {
+                ch[i][j] -= (*this)[i][j];
+            }
+        }
+        for (size_t i = 0; i < n; ++i) {
+            ch[i][i] += Poly<T>({0, 1});
+        }
+        return Det(ch);
+    }
+
     static SquareMatrix ScalarMatrix(int n, const T& lambda) {
         SquareMatrix ans(n);
         for (int i = 0; i < n; ++i) {
@@ -255,3 +327,82 @@ public:
         return ScalarMatrix(n, 1);
     }
 };
+
+template <typename T>
+T Det(SquareMatrix<T> matrix) {
+    size_t n = matrix.size();
+    T ans;
+    std::vector<size_t> indexes(n);
+    std::iota(indexes.begin(), indexes.end(), 0);
+    do {
+        size_t cnt = 0;
+        for (size_t i = 0; i < n; ++i) {
+            for (size_t j = 0; j < i; ++j) {
+                cnt += (indexes[j] > indexes[i]);
+            }
+        }
+        T cur = T(1);
+        for (size_t i = 0; i < n; ++i) {
+            cur *= matrix[i][indexes[i]];
+        }
+        if (cnt % 2 == 0) {
+            ans += cur;
+        } else {
+            ans -= cur;
+        }
+    } while (next_permutation(indexes.begin(), indexes.end()));
+    return ans;
+}
+
+class NotSolvableException: std::exception {
+public:
+    const char* what() const noexcept override {
+        return "The system cannot be solved";
+    }
+};
+
+template <typename T>
+std::vector<LinearCombination<T>> Solve(std::vector<LinearCombination<T>> combinations) {
+    size_t n = Variable::count;
+    Matrix<T> slv(combinations.size(), n + 1);
+    for (size_t i = 0; i < combinations.size(); ++i) {
+        for (const auto [var, coeff] : combinations[i]) {
+            if (var.id == 0) {
+                slv[i][n] = coeff;
+            } else {
+                slv[i][var.id - 1] = coeff;
+            }
+        }
+    }
+    slv.Gauss();
+    std::vector<LinearCombination<T>> ans(n);
+    for (size_t i = 0; i < n; ++i) {
+        ans[i] = Variable(i + 1);
+    }
+    for (size_t i = 0; i < combinations.size(); ++i) {
+        size_t j = 0;
+        while (j <= n && slv[i][j] == 0) {
+            j++;
+        }
+        if (j == n + 1) break;
+        if (j == n) throw NotSolvableException();
+        ans[j] -= Variable(j + 1);
+        for (size_t k = j + 1; k < n; ++k) {
+            ans[j] -= LinearCombination<T>(Variable(k + 1)) * slv[i][k];
+        }
+        ans[j] -= slv[i][n];
+    }
+    return ans;
+}
+
+template <typename T>
+std::vector<LinearCombination<T>> Solve(Matrix<LinearCombination<T>> A) {
+    std::vector<LinearCombination<T>> elements;
+    auto [n, m] = A.size();
+    for (int i = 0; i < n; ++i) {
+        for (int j = 0; j < m; ++j) {
+            elements.push_back(A[i][j]);
+        }
+    }
+    return Solve(elements);
+}
