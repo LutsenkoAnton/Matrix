@@ -280,10 +280,12 @@ public:
     int size() const {
         return Matrix<T>::size().first;
     }
-    SquareMatrix operator+(const SquareMatrix& other) const {
+    template<typename P>
+    SquareMatrix<decltype(T() + P())> operator+(const SquareMatrix<P>& other) const {
         return Matrix<T>::operator+(other);
     }
-    SquareMatrix operator-(const SquareMatrix& other) const {
+    template<typename P>
+    SquareMatrix<decltype(T() - P())> operator-(const SquareMatrix<P>& other) const {
         return Matrix<T>::operator-(other);
     }
     template<typename P>
@@ -293,10 +295,12 @@ public:
     SquareMatrix operator-() const {
         return Matrix<T>::operator-();
     }
-    Matrix<T> operator+(const Matrix<T>& other) const {
+    template<typename P>
+    Matrix<decltype(T() + P())> operator+(const Matrix<P>& other) const {
         return Matrix<T>::operator+(other);
     }
-    Matrix<T> operator-(const Matrix<T>& other) const {
+    template<typename P>
+    Matrix<decltype(T() - P())> operator-(const Matrix<P>& other) const {
         return Matrix<T>::operator-(other);
     }
     template<typename P>
@@ -305,7 +309,9 @@ public:
     }
 
     SquareMatrix Power(size_t indicator) const {
-        return fastpow(*this, indicator);
+        if (indicator == 0) return IdentityMatrix(size());
+        if (indicator % 2 == 0) return (*this * *this).Power(indicator / 2);
+        return *this * Power(indicator - 1);
     }
 
     SquareMatrix Inverse() const {

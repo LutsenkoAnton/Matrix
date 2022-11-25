@@ -90,7 +90,8 @@ int solve3() {
     auto p = a.CharPoly();
     cout << p << endl;
     // det((a^2 - 1)^-2) = det((a - 1)(a + 1)) ^ -2 = (det(a - 1) * det(a + 1))^-2 = (det(1 - a) * det(-1 - a))^-2 = 1 / (p(1) ^ 2 * p(-1) ^ 2)
-    cout << Fraction(1)/(p(1) * p(1) * p(-1) * p(-1));
+    // cout << Fraction(1)/(p(1) * p(1) * p(-1) * p(-1)) << endl;
+    cout << Det((a * a - SquareMatrix<Fraction>::IdentityMatrix(4)).Inverse().Power(2));
     cout << endl;
     return 0;
 }
@@ -120,7 +121,7 @@ int solve5() {
     Matrix<int64_t> b =
        {{-3, -1, 2, 1, 3},
         {2, 3, -2, -3, 1}};
-    cout << static_cast<SquareMatrix<int64_t>>(a * b).CharPoly() << endl;
+    // cout << static_cast<SquareMatrix<int64_t>>(a * b).CharPoly() << endl;
     cout << static_cast<SquareMatrix<int64_t>>(a * b).PermCharPoly() << endl;
     return 0;
 }
