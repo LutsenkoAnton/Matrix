@@ -3,7 +3,7 @@
 #include <cstddef>
 
 template<typename T>
-T myabs(const T& a) {
+T abs(const T& a) {
     return (a >= static_cast<T>(0) ? a : -a);
 }
 

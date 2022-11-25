@@ -6,6 +6,7 @@
 #include "rational_function.h"
 #include "variable.h"
 
+#include <cassert>
 #include <initializer_list>
 #include <iostream>
 #include <exception>
@@ -53,6 +54,7 @@ public:
         return std::make_pair(data_.size(), data_[0].size());
     }
 
+    //decltype for adding matrix of LinearCombinations and matrix of coefficients
     template<typename P>
     Matrix<decltype(T() + P())>  operator+(const Matrix<P>& other) const {
         if (other.size() != size()) throw WrongSizeException();
@@ -87,7 +89,8 @@ public:
         }
         return ans;
     }
-    
+
+    //decltype for substracting matrix of LinearCombinations from matrix of coefficients and vice versa
     template<typename P>
     Matrix<decltype(T() - P())> operator-(const Matrix<P>& other) const {
         return *this + -other;
@@ -97,6 +100,7 @@ public:
         return *this = *this - other;
     }
 
+    //decltype for multiplying matrix of LinearCombinations by matrix of coefficients
     template<typename P>
     Matrix<decltype(T() * P())> operator*(const Matrix<P>& other) const {
         if (size().second != other.size().first) throw WrongSizeException();
@@ -133,6 +137,7 @@ public:
         }
     }
 
+    // writes other to the right from *this
     Matrix operator|(const Matrix& other) const {
         if (size().first != other.size().first) throw WrongSizeException();
         auto [n, m] = size();

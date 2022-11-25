@@ -137,8 +137,8 @@ public:
                 continue;
             }
             stream << ' ' << (coefficient < T(0) ? '-' : '+') << ' ';
-            if (myabs(coefficient) != T(1) || power == 0) {
-                stream << myabs(coefficient);
+            if (abs(coefficient) != T(1) || power == 0) {
+                stream << abs(coefficient);
             }
             if (power == 0) {
                 continue;

@@ -8,7 +8,7 @@
 class Fraction {
 public:
     Fraction();
-    Fraction(int64_t a);  // NOLINT[google-explicit-constructor]
+    Fraction(int64_t a);
     Fraction(int64_t a, int64_t b);
     Fraction(const Fraction& other) = default;
     Fraction(Fraction&& other) = default;
@@ -38,5 +38,3 @@ private:
     int64_t numerator_;
     int64_t denominator_;
 };
-
-Fraction abs(const Fraction& f);

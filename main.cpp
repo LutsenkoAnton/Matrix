@@ -74,7 +74,8 @@ int solve2() {
         {5, -4, 9, -4}};
     // a * (x + d) ^ -1 * b = c
     // (x + d)^-1 = a^-1 * c * b^-1
-    // x = (a ^ -1 * c * b^-1) - d;
+    // x = (a ^ -1 * c * b^-1)^-1 - d;
+    // Throws an error if a or b are not invertible
     auto x = (a.Inverse() * c * b.Inverse()).Inverse() - d;
     assert(a * (x + d).Inverse() * b == c);
     cout << x << endl;
@@ -97,8 +98,8 @@ int solve3() {
 }
 
 int solve4() {
-    Poly x({0LL, 1LL});
-    SquareMatrix<RationalFunction<int64_t>> a = 
+    Poly<long long> x({0, 1});
+    SquareMatrix<RationalFunction<long long>> a = 
        {{x, 4, -7, -7, -9, -8, x},
         {-4, x, -2, 5, -6, 2, 4},
         {-1, -5, x, 1, 5, -5, 2},
@@ -106,23 +107,26 @@ int solve4() {
         {8, 6, -7, -2, x, 7, -5},
         {1, -9, -4, -3, 2, x, -1},
         {-4, -6, -2, x, 2, 7, -1}};
-    cout << PermDet(a).force_devide() << endl;
-    // cout << Det(a).force_devide() << endl; // Works faster, but overflows
+    auto p = Det(a).force_devide(); // Owerflows, but gives correct result
+    // auto p = PermDet(a).force_devide(); // Works slower
+    cout << p << endl;
+    cout << p.GetCoefficients()[5] << endl;
+    
     return 0;
 }
 
 int solve5() {
-    Matrix<int64_t> a =
+    Matrix<long long> a =
        {{1, -1},
         {-1, 1},
         {4, -4},
         {-3, 3},
         {2, -2}};
-    Matrix<int64_t> b =
+    Matrix<long long> b =
        {{-3, -1, 2, 1, 3},
         {2, 3, -2, -3, 1}};
-    // cout << static_cast<SquareMatrix<int64_t>>(a * b).CharPoly() << endl;
-    cout << static_cast<SquareMatrix<int64_t>>(a * b).PermCharPoly() << endl;
+    cout << static_cast<SquareMatrix<long long>>(a * b).CharPoly() << endl; // Owerflows, but gives correct result
+    // cout << static_cast<SquareMatrix<long long>>(a * b).PermCharPoly() << endl; // Works slower
     return 0;
 }
 
