@@ -3,6 +3,7 @@
 #include <compare>
 #include <cstddef>
 
+// Variable(0) reserved for constant
 struct Variable {
     Variable() {
         id = ++count;

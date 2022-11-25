@@ -13,6 +13,7 @@ public:
     LinearCombination(LinearCombination&& other) = default;
     LinearCombination& operator=(const LinearCombination& other) = default;
     LinearCombination& operator=(LinearCombination&& other) = default;
+
     LinearCombination(Variable v): coefficients_({{v, 1}}) {}
     LinearCombination(T coefficient): coefficients_({{Variable(0), coefficient}}) {}
     LinearCombination(std::map<Variable, T> coefficients): coefficients_(coefficients) {}
