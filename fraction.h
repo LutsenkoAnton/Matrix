@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cmath>
 #include <compare>
 #include <iostream>
 #include <numeric>
@@ -7,11 +8,15 @@
 class Fraction {
 public:
     Fraction();
-    Fraction(int a);  // NOLINT[google-explicit-constructor]
-    Fraction(int a, int b);
+    Fraction(int64_t a);  // NOLINT[google-explicit-constructor]
+    Fraction(int64_t a, int64_t b);
+    Fraction(const Fraction& other) = default;
+    Fraction(Fraction&& other) = default;
+    Fraction& operator=(const Fraction& other) = default;
+    Fraction& operator=(Fraction&& other) = default;
 
-    bool operator==(const Fraction& other) const;
-    bool operator!=(const Fraction& other) const;
+    bool operator==(const Fraction& other) const = default;
+    bool operator!=(const Fraction& other) const = default;
     std::strong_ordering operator<=>(const Fraction& other) const;
 
     Fraction operator+(const Fraction& other) const;
@@ -30,6 +35,8 @@ public:
 private:
     void Shorten();
 
-    int numerator_;
-    int denominator_;
+    int64_t numerator_;
+    int64_t denominator_;
 };
+
+Fraction abs(const Fraction& f);

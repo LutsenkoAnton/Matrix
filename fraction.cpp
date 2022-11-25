@@ -1,24 +1,12 @@
 #include "fraction.h"
-
-Fraction::Fraction() : numerator_(0), denominator_(1) {
-}
-
-Fraction::Fraction(int a) : numerator_(a), denominator_(1) {
-}
-
-Fraction::Fraction(int a, int b) : numerator_(a), denominator_(b) {
+Fraction::Fraction() : numerator_(0), denominator_(1) {}
+Fraction::Fraction(int64_t a) : numerator_(a), denominator_(1) {}
+Fraction::Fraction(int64_t a, int64_t b) : numerator_(a), denominator_(b) {
     Shorten();
 }
 
-bool Fraction::operator==(const Fraction& other) const {
-    return numerator_ == other.numerator_ && denominator_ == other.denominator_;
-}
-bool Fraction::operator!=(const Fraction& other) const {
-    return numerator_ != other.numerator_ || denominator_ != other.denominator_;
-}
 std::strong_ordering Fraction::operator<=>(const Fraction& other) const {
-    return static_cast<int64_t>(numerator_) * other.denominator_ <=>
-           static_cast<int64_t>(denominator_) * other.numerator_;
+    return numerator_ * other.denominator_ <=> denominator_ * other.numerator_;
 }
 
 Fraction Fraction::operator+(const Fraction& other) const {
@@ -67,7 +55,7 @@ Fraction& Fraction::operator/=(const Fraction& other) {
 }
 
 void Fraction::Shorten() {
-    int d = std::gcd(numerator_, denominator_);
+    int64_t d = std::gcd(numerator_, denominator_);
     numerator_ /= d;
     denominator_ /= d;
     if (denominator_ < 0) {

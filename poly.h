@@ -1,24 +1,41 @@
 #pragma once
 
+#include "mymath.h"
+
+#include <functional>
 #include <initializer_list>
 #include <iostream>
+#include <map>
 #include <vector>
 
 template <typename T>
 class Poly {
 public:
     Poly() {}
-    Poly(const T& coefficient): coefficients_({coefficient}) {}
-    Poly(const std::vector<T>& coefficients): coefficients_(coefficients) {}
-    Poly(const std::initializer_list<T>& coefficients): coefficients_(coefficients) {}
+    Poly(const Poly& other) = default;
+    Poly(const Poly&& other) = default;
     Poly& operator=(const Poly& other) = default;
+    Poly& operator=(const Poly&& other) = default;
+    Poly(const T& coefficient): Poly(coefficient, 0) {
+        Clean();
+    }
+    Poly(const T& coefficient, size_t power): coefficients_({{power, coefficient}}) {}
+    Poly(const std::vector<T>& coefficients) {
+        for (size_t power = 0; power < coefficients.size(); ++power) {
+            if (coefficients[power] != 0) {
+                coefficients_[power] = coefficients[power];
+            }
+        }
+    }
+    Poly(const std::map<size_t, T, std::greater<size_t>> coefficients): coefficients_(coefficients) {
+        Clean();
+    }
+    Poly(const std::initializer_list<T>& coefficients): Poly(std::vector<T>(coefficients)) {}
 
     T operator() (const T& x) const {
-        T power = 1;
         T sum = 0;
-        for (size_t i = 0; i < coefficients_.size(); ++i) {
-            sum += power * coefficients_[i];
-            power *= x;
+        for (const auto& [power, coefficient] : coefficients_) {
+            sum += fastpow(x, power) * coefficient;
         }
         return sum;
     }
@@ -27,19 +44,17 @@ public:
     bool operator!=(const Poly& other) const = default;
 
     Poly operator+(const Poly& other) const {
-        Poly ans(std::vector<T>(std::max(coefficients_.size(), other.coefficients_.size())));
-        for (size_t i = 0; i < coefficients_.size(); ++i) {
-            ans.coefficients_[i] = coefficients_[i];
+        Poly ans(*this);
+        for (const auto& [power, coefficient] : other.coefficients_) {
+            ans.coefficients_[power] += coefficient;
         }
-        for (size_t i = 0; i < other.coefficients_.size(); ++i) {
-            ans.coefficients_[i] += other.coefficients_[i];
-        }
+        ans.Clean();
         return ans;
     }
     Poly operator-() const {
-        Poly ans(coefficients_);
-        for (size_t i = 0; i < coefficients_.size(); ++i) {
-            ans.coefficients_[i] = -ans.coefficients_[i];
+        Poly ans(*this);
+        for (auto &[power, coefficient] : ans.coefficients_) {
+            coefficient = -coefficient;
         }
         return ans;
     }
@@ -47,12 +62,13 @@ public:
         return *this + -other;
     }
     Poly operator*(const Poly& other) const {
-        Poly ans(std::vector<T>(coefficients_.size() + other.coefficients_.size() - 1));
-        for (size_t i = 0; i < coefficients_.size(); ++i) {
-            for (size_t j = 0; j < other.coefficients_.size(); ++j) {
-                ans.coefficients_[i + j] += coefficients_[i] * other.coefficients_[j];
+        Poly ans;
+        for (const auto& [power1, coefficient1] : coefficients_) {
+            for (const auto& [power2, coefficient2] : other.coefficients_) {
+                ans.coefficients_[power1 + power2] += coefficient1 * coefficient2;
             }
         }
+        ans.Clean();
         return ans;
     }
 
@@ -69,19 +85,45 @@ public:
         return *this;
     }
 
+    std::map<size_t, T, std::greater<size_t>> GetCoefficients() const {
+        return coefficients_;
+    }
+
+    std::map<size_t, T, std::greater<size_t>>& GetCoefficients() {
+        return coefficients_;
+    }
+
+    void Clean() {
+        for (auto it = coefficients_.begin(); it != coefficients_.end();) {
+            if (it -> second == T(0)) {
+                it = coefficients_.erase(it);
+            } else {
+                ++it;
+            }
+        }
+    }
+
+    T SeniorCoefficient() const {
+        if (coefficients_.empty()) return 0;
+        return coefficients_.begin() -> second;
+    }
+
+    size_t deg() const {
+        if (coefficients_.empty()) return 0;
+        return coefficients_.begin() -> first;
+    }
+
     friend std::ostream& operator<<(std::ostream& stream, const Poly& polynomial) {
         if (polynomial.coefficients_.empty()) {
             stream << "0";
             return stream;
         }
         bool first = true;
-        for (size_t p = 0; p < polynomial.coefficients_.size(); ++p) {
-            size_t power = polynomial.coefficients_.size() - 1 - p;
-            auto coefficient = polynomial.coefficients_[power];
-            if (coefficient == 0) continue;
+        for (const auto& [power, coefficient] : polynomial.coefficients_) {
+            if (coefficient == T(0)) continue;
             if (first) {
                 first = false;
-                if (coefficient != 1) {
+                if (coefficient != T(1) || power == 0) {
                     stream << coefficient;
                 }
                 if (power == 0) {
@@ -94,7 +136,10 @@ public:
                 stream << "x^" << power;
                 continue;
             }
-            stream << ' ' << (coefficient < 0 ? '-' : '+') << ' ' << std::abs(coefficient);
+            stream << ' ' << (coefficient < T(0) ? '-' : '+') << ' ';
+            if (myabs(coefficient) != T(1) || power == 0) {
+                stream << myabs(coefficient);
+            }
             if (power == 0) {
                 continue;
             }
@@ -107,7 +152,7 @@ public:
         return stream;
     }
 
-    private:
-        std::vector<T> coefficients_;
+private:
+    std::map<size_t, T, std::greater<size_t>> coefficients_;
 };
 

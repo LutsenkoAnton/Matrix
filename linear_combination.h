@@ -8,7 +8,11 @@
 template<typename T>
 class LinearCombination {
 public:
-    LinearCombination() {}
+    LinearCombination() = default;
+    LinearCombination(const LinearCombination& other) = default;
+    LinearCombination(LinearCombination&& other) = default;
+    LinearCombination& operator=(const LinearCombination& other) = default;
+    LinearCombination& operator=(LinearCombination&& other) = default;
     LinearCombination(Variable v): coefficients_({{v, 1}}) {}
     LinearCombination(T coefficient): coefficients_({{Variable(0), coefficient}}) {}
     LinearCombination(std::map<Variable, T> coefficients): coefficients_(coefficients) {}
@@ -59,12 +63,31 @@ public:
         return coefficients_[var];
     }
     T operator[](const Variable& var) const {
-        return coefficients_[var];
+        auto it = coefficients_.find(var);
+        if (it == coefficients_.end()) return T(0);
+        return it -> second;
     }
+
+    bool is_constant() const {
+        if (coefficients_.size() > 1) return false;
+        if (coefficients_.size() == 0) return true;
+        if (coefficients_.count(Variable(0)) == 1) return true;
+        return false;
+    }
+
     typename std::map<Variable, T>::iterator begin() {
         return coefficients_.begin();
     }
+
+    typename std::map<Variable, T>::const_iterator begin() const {
+        return coefficients_.begin();
+    }
+
     typename std::map<Variable, T>::iterator end() {
+        return coefficients_.end();
+    }
+
+    typename std::map<Variable, T>::const_iterator end() const {
         return coefficients_.end();
     }
 
@@ -106,7 +129,7 @@ std::ostream& operator<<(std::ostream& stream, LinearCombination<T> comb) {
             }
         }
     }
-    if (free_monom != 0) {
+    if (free_monom != T(0)) {
         if (first) {
             stream << free_monom;
         } else {
