@@ -3,13 +3,17 @@ all: main
 CXX = clang++
 override CXXFLAGS += -g -Wall -Werror -std=c++20 -fsanitize=address,undefined
 
-SRCS = $(shell find . -name '.ccls-cache' -type d -prune -o -type f -name '*.cpp' -print | sed -e 's/ /\\ /g')
+SRCS = permutation.cpp integer.cpp
+LIBS = *.h
 
-main: $(SRCS)
-	$(CXX) $(CXXFLAGS) $(SRCS) -o "$@"
+main: $(SRCS) $(LIBS) main.cpp
+	$(CXX) $(CXXFLAGS) $(SRCS) main.cpp -o "$@"
 
-main-debug: $(SRCS)
-	$(CXX) $(CXXFLAGS) -O0 $(SRCS) -o "$@"
+bdz2: $(SRCS) $(LIBS) bdz2.cpp
+	$(CXX) $(CXXFLAGS) $(SRCS) bdz2.cpp -o "$@"
+
+main-debug: $(SRCS) $(LIBS) main.cpp
+	$(CXX) $(CXXFLAGS) -O0 $(SRCS) main.cpp -o "$@"
 
 clean:
-	rm -f main main-debug
+	rm -rf *.dSYM main main-debug bdz2
