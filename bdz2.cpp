@@ -36,12 +36,12 @@ int solve1() {
         // {0, 0, 0, 0, 0, 0, 0, 1},
         // {1, 0, 0, 0, 0, 0, 0, 0},
         // {0, 0, 0, 0, 1, 0, 0, 0}};
-    Permutation a = {3, 6, 2, 4, 7, 0, 5, 1};
-    Permutation b = {5, 6, 1, 4, 2, 3, 0, 7};
-    Permutation c = {{0, 6}, {1, 5, 7, 4, 2, 3}};
+    Permutation<8> a = {3, 6, 2, 4, 7, 0, 5, 1};
+    Permutation<8> b = {5, 6, 1, 4, 2, 3, 0, 7};
+    Permutation<8> c = {{0, 6}, {1, 5, 7, 4, 2, 3}};
     // s * c * s = (a ^ -1 * b ^ 17) ^ 161
     auto x = (a.Inverse() * b.Power(17)).Power(161);
-    for(const auto& s : AllPermutations(8)) {
+    for(const auto& s : AllPermutations<8>()) {
         if (s * c * s == x) {
             cout << s << endl;
         }

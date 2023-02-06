@@ -3,7 +3,7 @@ all: main
 CXX = clang++
 override CXXFLAGS += -g -Wall -Werror -std=c++20 -fsanitize=address,undefined
 
-SRCS = permutation.cpp integer.cpp
+SRCS = integer.cpp
 LIBS = *.h
 
 main: $(SRCS) $(LIBS) main.cpp

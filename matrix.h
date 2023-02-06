@@ -13,14 +13,14 @@
 #include <numeric>
 #include <type_traits>
 
-class WrongSizeException: public std::exception {
+class WrongSizeException : public std::exception {
 public:
     const char* what() const noexcept override {
         return "Wrong sizes of matrixes";
     }
 };
 
-class SingularMatrixException: public std::exception {
+class SingularMatrixException : public std::exception {
 public:
     const char* what() const noexcept override {
         return "Matrix is singular";
@@ -47,7 +47,9 @@ public:
             ++i;
         }
         for (size_t i = 0; i < data_.size(); ++i) {
-            if (data_[i].size() != data_[0].size()) throw WrongSizeException();
+            if (data_[i].size() != data_[0].size()) {
+                throw WrongSizeException();
+            }
         }
     }
 
@@ -69,12 +71,7 @@ public:
     }
 
     Matrix& operator+=(const Matrix& other) {
-        for (size_t i = 0; i < n; ++i) {
-            for (size_t j = 0; j < m; ++j) {
-                data_[i][j] += other[i][j];
-            }
-        }
-        return *this;
+        return *this = *this + other;
     }
 
     Matrix operator-() const {
@@ -95,7 +92,7 @@ public:
         return *this = *this - other;
     }
 
-    template<size_t k>
+    template <size_t k>
     Matrix<T, n, k> operator*(const Matrix<T, m, k>& other) const {
         Matrix<T, n, k> a;
         for (size_t i = 0; i < n; ++i) {
@@ -127,7 +124,7 @@ public:
     }
 
     // writes other to the right from *this
-    template<size_t k>
+    template <size_t k>
     Matrix<T, n, m + k> operator|(const Matrix<T, n, k>& other) const {
         Matrix<T, n, m + k> a;
         for (size_t i = 0; i < n; ++i) {
@@ -156,7 +153,7 @@ public:
             for (size_t i = start; i < n; ++i) {
                 if (data_[i][j] != T::ZERO) {
                     found = true;
-                with_non_zero_coefficient = i;
+                    with_non_zero_coefficient = i;
                     break;
                 }
             }
@@ -194,9 +191,10 @@ public:
         return ans;
     }
 
-    template<size_t len_i, size_t len_j>
+    template <size_t len_i, size_t len_j>
     Matrix<T, len_i, len_j> Slice(size_t start_i = 0, size_t start_j = 0) const {
-        if (len_i + start_i > n || len_j + start_j > m) throw WrongSizeException();
+        if (len_i + start_i > n || len_j + start_j > m)
+            throw WrongSizeException();
         Matrix<T, len_i, len_j> ans;
         for (size_t i = 0; i < len_i; ++i) {
             for (size_t j = 0; j < len_j; ++j) {
@@ -206,20 +204,28 @@ public:
         return ans;
     }
     //----------------------- Square matrix methods -----------------------
-    T Trace() const requires(n == m) {
+    T Trace() const
+        requires(n == m)
+    {
         T sum = T::ZERO;
         for (size_t i = 0; i < n && i < m; ++i) {
             sum += (*this)[i][i];
         }
     }
 
-    Matrix Power(size_t indicator) const requires(n == m) {
-        if (indicator == 0) return IdentityMatrix();
-        if (indicator % 2 == 0) return (*this * *this).Power(indicator / 2);
+    Matrix Power(size_t indicator) const
+        requires(n == m)
+    {
+        if (indicator == 0)
+            return IdentityMatrix();
+        if (indicator % 2 == 0)
+            return (*this * *this).Power(indicator / 2);
         return *this * Power(indicator - 1);
     }
 
-    Matrix Inverse() const requires(n == m) {
+    Matrix Inverse() const
+        requires(n == m)
+    {
         auto ans = *this | IdentityMatrix();
         ans.Gauss();
         if (ans.template Slice<n, n>(0, 0) != IdentityMatrix()) {
@@ -228,7 +234,9 @@ public:
         return ans.template Slice<n, n>(0, n);
     }
 
-    Poly<T> CharPoly() const requires(n == m){
+    Poly<T> CharPoly() const
+        requires(n == m && Field<T>)
+    {
         Matrix<Fraction<Poly<T>>, n> ch;
         for (size_t i = 0; i < n; ++i) {
             for (size_t j = 0; j < n; ++j) {
@@ -241,6 +249,21 @@ public:
         return Det(ch).GetIntegerPart();
     }
 
+    Poly<T> CharPoly() const
+        requires(n == m && !Field<T>)
+    {
+        Matrix<Poly<T>, n> ch;
+        for (size_t i = 0; i < n; ++i) {
+            for (size_t j = 0; j < n; ++j) {
+                ch[i][j] -= Poly<T>((*this)[i][j]);
+            }
+        }
+        for (size_t i = 0; i < n; ++i) {
+            ch[i][i] += Poly<T>({T::ZERO, T::ONE});
+        }
+        return Det(ch);
+    }
+
     size_t rk() const {
         Matrix a = *this;
         a.Gauss();
@@ -250,13 +273,15 @@ public:
                 ++j;
             }
             if (j == m) {
-               return i;
+                return i;
             }
         }
         return n;
     }
 
-    static Matrix ScalarMatrix(const T& lambda) requires(n == m) {
+    static Matrix ScalarMatrix(const T& lambda)
+        requires(n == m)
+    {
         Matrix ans;
         for (size_t i = 0; i < n; ++i) {
             ans[i][i] = lambda;
@@ -264,9 +289,12 @@ public:
         return ans;
     }
 
-    static Matrix IdentityMatrix() requires(n == m) {
+    static Matrix IdentityMatrix()
+        requires(n == m)
+    {
         return ScalarMatrix(T::ONE);
     }
+
 private:
     std::array<std::array<T, m>, n> data_;
 };
@@ -287,10 +315,8 @@ std::ostream& operator<<(std::ostream& stream, const Matrix<T, n, m>& matrix) {
     return stream;
 }
 
-
-
 template <RingWithOne T, size_t n>
-requires Field<T>
+    requires Field<T>
 T Det(Matrix<T, n> matrix) {
     size_t start = 0;
     T ans = T::ONE;
@@ -337,10 +363,10 @@ T Det(Matrix<T, n> matrix) {
 }
 
 template <RingWithOne T, size_t n>
-requires (!Field<T>)
+    requires(!Field<T>)
 T Det(Matrix<T, n> matrix) {
     T ans = T::ZERO;
-    for (const auto &indexes : AllPermutations(n)) {
+    for (const auto& indexes : AllPermutations<n>()) {
         T cur = T::ONE;
         for (size_t i = 0; i < n; ++i) {
             cur *= matrix[i][indexes[i]];

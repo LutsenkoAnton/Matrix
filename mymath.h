@@ -1,8 +1,9 @@
 #pragma once
 
+#include "myconcepts.h"
+
 #include <cstddef>
 #include <iostream>
-#include "myconcepts.h"
 
 template<RingWithOne T>
 T abs(const T& a) {
