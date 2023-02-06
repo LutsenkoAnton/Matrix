@@ -32,4 +32,9 @@
 *.app
 *.dSYM
 .ccls-cache
-main
+main*
+bdz[0-9]
+.clang-format
+.clang-tidy
+compile_commands.json
+.cache
