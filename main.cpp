@@ -1,12 +1,12 @@
-#include <cassert>
-#include <iostream>
-
 #include "fraction.h"
 #include "integer.h"
 #include "linear_operator.h"
 #include "matrix.h"
 #include "vector.h"
 #include "vector_space.h"
+
+#include <cassert>
+#include <iostream>
 
 using namespace std;
 
@@ -27,7 +27,7 @@ int solve1() {
         new_basis.push_back(vec);
     }
     // cout << new_basis.size() << endl;
-    std::array<Vector<Frac, 6>, 6> arr; // new_basis.size() == 4; +2 new vectors --- v1 and v2 // Yes, I have changed vectors to arrays because I forgot that I know sizes only in runtime
+    std::array<Vector<Frac, 6>, 6> arr; // new_basis.size() == 4; +2 new vectors --- v1 and v2 // Yes, I have changed vectors to arrays because I forgot that sizes are known only in runtime
     for (size_t i = 0; i < 6; ++i) {
         arr[i] = new_basis[i];
     }
@@ -95,6 +95,7 @@ int solve4() {
         { 4_i,  4_i, -6_i, -3_i},
         {-3_i, -2_i, -3_i, -2_i},
         { 6_i,  4_i,  6_i,  4_i}};
+
     cout << a.CharPoly() << endl; // x^4 - 4x^3 + 4x^2 = (x - 2) ^ 2 * x ^ 2
     Matrix<Frac, 4> fa = 
        {{-1_fi, -2_fi,  7_fi,  4_fi},
@@ -106,6 +107,8 @@ int solve4() {
     Frac l2 = 0_fi;
     auto id = LinearOperator<Frac, 4>::ONE;
     auto im = (phi - id * l1).Power(4).ker(); 
+    // For integer results, can be done without this line, but with it this is more beautiful
+    im.GetBasis()[1] *= 2_fi;
     auto ker = (phi - id * l2).Power(4).ker(); 
     LinearOperator psi(im, ker);
     cout << psi.GetData() << endl;
@@ -133,7 +136,9 @@ int solve5() {
     C[0][0] = (gu[0][0] - C[0][1] * gv[1][0] - C[0][2] * gv[2][0]) / gv[0][0];
     C[1][1] = (gu[1][0] - C[1][0] * gv[0][0] - C[1][2] * gv[2][0]) / gv[1][0];
     C[2][2] = (gu[2][0] - C[2][0] * gv[0][0] - C[2][1] * gv[1][0]) / gv[2][0];
-    cout << G * C * G.Inverse();
+    auto A = G * C * G.Inverse();
+    assert(A * v == u);
+    cout << A;
     return 0;
 }
 

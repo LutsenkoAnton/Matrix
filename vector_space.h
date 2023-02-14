@@ -87,6 +87,11 @@ public:
     const std::vector<Vector<T, n>>& GetBasis() const {
         return basis;
     }
+
+    std::vector<Vector<T, n>>& GetBasis() {
+        return basis;
+    }
+
     Matrix<T, n> GetBasisMatrix() const {
         Matrix<T, n> ans;
         for (size_t i = 0; i < basis.size(); ++i) {

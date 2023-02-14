@@ -9,11 +9,14 @@
 #include <cstddef>
 #include <iterator>
 
-template<Field T, size_t n>
+template <Field T, size_t n>
 class LinearOperator {
 public:
-    LinearOperator(const Matrix<T, n>& data): data_(data) {}
-    LinearOperator(const VectorSpace<T, n>& im, const VectorSpace<T, n>& ker) : LinearOperator(im.GetBasisMatrix() * ker.GetEquasion()) {}
+    LinearOperator(const Matrix<T, n>& data) : data_(data) {
+    }
+    LinearOperator(const VectorSpace<T, n>& im, const VectorSpace<T, n>& ker)
+        : LinearOperator(im.GetBasisMatrix() * ker.GetEquasion()) {
+    }
     LinearOperator operator+(const LinearOperator& other) const {
         return LinearOperator(data_ + other.data_);
     }
@@ -77,6 +80,7 @@ public:
 
     static inline const LinearOperator ZERO = LinearOperator();
     static inline const LinearOperator ONE = LinearOperator(Matrix<T, n>::IdentityMatrix());
+
 private:
     Matrix<T, n> data_;
 };

@@ -56,6 +56,7 @@ public:
         for (size_t i = 0; i < n; ++i) {
             ans[i] *= lambda;
         }
+        return ans;
     }
     Vector operator-() const {
         Vector ans;

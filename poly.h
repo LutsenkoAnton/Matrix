@@ -79,6 +79,9 @@ public:
         }
         size_t n = deg();
         size_t m = other.deg();
+        if (n < m) {
+            return Poly::ZERO;
+        }
         Poly<T> curans;
         T am = other.SeniorCoefficient();
         auto cpthis = *this;
