@@ -4,6 +4,7 @@
 #include <initializer_list>
 #include <iostream>
 #include <numeric>
+#include <vector>
 
 template<size_t n>
 class Permutation {

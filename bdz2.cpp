@@ -95,7 +95,6 @@ int solve3() {
     Integer o = 1;
     // det((a^2 - 1)^-2) = det((a - 1)(a + 1)) ^ -2 = (det(a - 1) * det(a + 1))^-2 = (det(1 - a) * det(-1 - a))^-2 = 1 / (p(1) ^ 2 * p(-1) ^ 2)
     cout << Frac(1)/(p(o) * p(o) * p(-o) * p(-o)) << endl;
-    // cout << Det((a * a - SquareMatrix<Frac>::IdentityMatrix(4)).Inverse().Power(2));
     cout << endl;
     return 0;
 }
@@ -110,8 +109,7 @@ int solve4() {
         {8_fi, 6_fi, -7_fi, -2_fi, x, 7_fi, -5_fi},
         {1_fi, -9_fi, -4_fi, -3_fi, 2_fi, x, -1_fi},
         {-4_fi, -6_fi, -2_fi, x, 2_fi, 7_fi, -1_fi}};
-    auto p = Det(a); // Owerflows, but gives correct result
-    // auto p = PermDet(a).force_devide(); // Works slower
+    auto p = Det(a);
     cout << p << endl;
     cout << p.GetCoefficients()[5] << endl;
     return 0;

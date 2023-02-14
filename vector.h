@@ -22,6 +22,11 @@ public:
             data_[i] = *it;
         }
     }
+    Vector(const Matrix<T, n, 1>& mat) {
+        for (size_t i = 0; i < n; ++i) {
+            data_[i] = mat[i][0];
+        }
+    }
 
     const T& operator[](size_t i) const {
         return data_[i];

@@ -83,9 +83,9 @@ int solve3() {
             basisKer[j][i + im.dim()] = ker.GetBasis()[i][j];
         }
     }
-    Matrix<Frac, 4, 1> x = D.Inverse() * static_cast<Matrix<Frac, 4 ,1>>(v);
-    cout << "im part: " << im.GetBasisMatrix() * x << endl;;
-    cout << "ker part: " << basisKer * x << endl;;
+    Matrix<Frac, 4, 1> x = D.Inverse() * static_cast<Matrix<Frac, 4, 1>>(v);
+    cout << "im part: " << Vector(im.GetBasisMatrix() * x) << endl;
+    cout << "ker part: " << Vector(basisKer * x) << endl;
     return 0;
 }
 
