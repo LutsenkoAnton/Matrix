@@ -1,6 +1,6 @@
 all: main
 
-CXX = clang++
+CXX = g++
 override CXXFLAGS += -g -Wall -Werror -std=c++20 -fsanitize=address,undefined
 
 SRCS = 
