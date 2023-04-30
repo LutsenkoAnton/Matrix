@@ -20,13 +20,13 @@ public:
     }
 
     Float(double num): data_(num) {
-        if (abs(num) < EPS) { // Gets rid of -0s
+        if (std::abs(num) < EPS) { // Gets rid of -0s
             data_ = 0;
         }
     }
 
     bool operator==(const Float& other) const {
-        return abs(other.data_ - data_) < EPS;
+        return std::abs(other.data_ - data_) < EPS;
     }
     bool operator!=(const Float& other) const {
         return !operator==(other);

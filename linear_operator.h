@@ -7,6 +7,7 @@
 #include "vector_space.h"
 
 #include <algorithm>
+#include <cassert>
 #include <cstddef>
 #include <exception>
 #include <iterator>
