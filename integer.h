@@ -3,6 +3,8 @@
 #include <compare>
 #include <iostream>
 
+#include "mymath.h"
+
 class Integer {
 public:
     Integer() = default;
@@ -62,8 +64,13 @@ public:
         return in;
     }
 
-    static const Integer ZERO;
-    static const Integer ONE;
+    static Integer ONE() {
+        return Integer(1);
+    }
+    static Integer ZERO() {
+        return Integer(0);
+    }
+
 private:
     long long data_;
 };

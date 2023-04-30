@@ -1,31 +1,51 @@
 #pragma once
 
+#include "exceptions.h"
 #include "matrix.h"
 #include "myconcepts.h"
 
-#include <array>
 #include <cstddef>
 #include <initializer_list>
+#include <vector>
 
-template<RingWithOne T, size_t n>
+template<RingWithOne T>
 class Vector {
 public:
-    Vector() = default;
+    Vector(size_t n) {
+        data_.resize(n);
+    }
     Vector(const Vector& other) = default;
     Vector(Vector&& other) = default;
     Vector& operator=(const Vector& other) = default;
     Vector& operator=(Vector&& other) = default;
 
     Vector(std::initializer_list<T> data) {
+        data_.resize(data.size());
         size_t i = 0;
         for (auto it = data.begin(); it != data.end(); ++it, ++i) {
             data_[i] = *it;
         }
     }
-    Vector(const Matrix<T, n, 1>& mat) {
-        for (size_t i = 0; i < n; ++i) {
-            data_[i] = mat[i][0];
+
+    Vector(const Matrix<T>& mat) {
+        if (mat.nsize() != 1 && mat.msize() != 1) {
+            throw WrongSizeException();
         }
+        if (mat.msize() == 1) {
+            data_.resize(mat.nsize());
+            for (size_t i = 0; i < data_.size(); ++i) {
+                data_[i] = mat[i][0];
+            }
+        } else {
+            data_.resize(mat.msize());
+            for (size_t i = 0; i < data_.size(); ++i) {
+                data_[i] = mat[0][i];
+            }
+        }
+    }
+
+    size_t size() const {
+        return data_.size();
     }
 
     const T& operator[](size_t i) const {
@@ -36,36 +56,45 @@ public:
     }
 
     Vector operator+(const Vector& other) const {
+        if (size() != other.size()) {
+            throw WrongSizeException();
+        }
         Vector ans;
-        for (size_t i = 0; i < n; ++i) {
+        for (size_t i = 0; i < size(); ++i) {
             ans[i] = other[i] + data_[i];
         }
         return ans;
     }
     Vector operator-(const Vector& other) const {
-        Vector ans;
-        for (size_t i = 0; i < n; ++i) {
-            ans[i] = other[i] - data_[i];
+        if (size() != other.size()) {
+            throw WrongSizeException();
+        }
+        Vector ans(size());
+        for (size_t i = 0; i < size(); ++i) {
+            ans[i] = data_[i] - other[i];
         }
         return ans;
     }
     T operator*(const Vector& other) const {
-        T ans = T::ZERO;
-        for (size_t i = 0; i < n; ++i) {
+        if (size() != other.size()) {
+            throw WrongSizeException();
+        }
+        T ans = T::ZERO();
+        for (size_t i = 0; i < size(); ++i) {
             ans += data_[i] * other[i];
         }
         return ans;
     }
     Vector operator*(const T& lambda) const {
         Vector ans = *this;
-        for (size_t i = 0; i < n; ++i) {
+        for (size_t i = 0; i < size(); ++i) {
             ans[i] *= lambda;
         }
         return ans;
     }
     Vector operator-() const {
-        Vector ans;
-        for (size_t i = 0; i < n; ++i) {
+        Vector ans(size());
+        for (size_t i = 0; i < size(); ++i) {
             ans[i] = -data_[i];
         }
         return ans;
@@ -81,9 +110,9 @@ public:
         return *this = *this * lambda;
     }
 
-    operator Matrix<T, n, 1>() {
-        Matrix<T, n, 1> ans;
-        for (size_t i = 0; i < n; ++i) {
+    operator Matrix<T>() {
+        Matrix<T> ans(size(), 1);
+        for (size_t i = 0; i < size(); ++i) {
             ans[i][0] = data_[i];
         }
         return ans;
@@ -95,7 +124,7 @@ public:
 
     friend std::ostream &operator<<(std::ostream& out, const Vector& vec) {
         out << "(";
-        for (size_t i = 0; i < n; ++i) {
+        for (size_t i = 0; i < vec.size(); ++i) {
             out << (i ? ", " : "") << vec[i];
         }
         out << ")";
@@ -103,5 +132,5 @@ public:
     }
 
 private:
-    std::array<T, n> data_;
+    std::vector<T> data_;
 };

@@ -1,5 +1,7 @@
 #include "fraction.h"
+#include "float.h"
 #include "integer.h"
+#include "integer_mod.h"
 #include "linear_operator.h"
 #include "matrix.h"
 #include "vector.h"
@@ -11,134 +13,192 @@
 using namespace std;
 
 using Frac = Fraction<Integer>;
+// using Frac = Float;
 
 int solve1() {
-    Matrix<Frac, 3, 6> a =
-        {{-1_fi, -1_fi,  1_fi, -3_fi, -2_fi,  3_fi},
-         {-1_fi, -1_fi,  2_fi, -5_fi, -1_fi,  4_fi},
-         { 1_fi,  1_fi, -1_fi,  3_fi,  2_fi, -3_fi}};
-    Vector<Frac, 6> v1 = {-5_fi, 1_fi, -7_fi, -1_fi, 3_fi, 2_fi};
-    Vector<Frac, 6> v2 = {-8_fi, -1_fi, 0_fi, 2_fi, 3_fi, 1_fi};
-    assert((a * static_cast<Matrix<Frac, 6, 1>>(v1) == Matrix<Frac, 3, 1>())); // Checking that Av1 = 0
-    assert((a * static_cast<Matrix<Frac, 6, 1>>(v2) == Matrix<Frac, 3, 1>())); // Checking that Av2 = 0
-    auto basis = VectorSpace(a).GetBasis();
-    std::vector<Vector<Frac, 6>> new_basis = {v1, v2};
-    for (const auto& vec : basis) {
-        new_basis.push_back(vec);
-    }
-    // cout << new_basis.size() << endl;
-    std::array<Vector<Frac, 6>, 6> arr; // new_basis.size() == 4; +2 new vectors --- v1 and v2 // Yes, I have changed vectors to arrays because I forgot that sizes are known only in runtime
-    for (size_t i = 0; i < 6; ++i) {
-        arr[i] = new_basis[i];
-    }
-    auto ans = VectorSpace(arr).GetBasis(); // Basis will contain v1 and v2, beacause they are at the beginning of the array, so they can only be excluded by themselves
-    for (const auto& vec : ans) {
-        cout << vec << endl;
-    }
+    // Matrix<IntegerMod> a = {
+    //     {-5_im, -3_im,  1_im, -3_im},
+    //     { 5_im,  4_im, -1_im,  2_im},
+    //     {-5_im, -2_im,  3_im, -2_im},
+    //     { 9_im,  4_im, -1_im,  6_im}};
+    // Matrix<IntegerMod> b = {
+    //     {-1_im, -5_im,  1_im,  3_im},
+    //     { 3_im,  8_im, -1_im, -4_im},
+    //     {-3_im, -4_im,  3_im,  2_im},
+    //     { 3_im,  6_im, -1_im, -2_im}};
+    // Matrix<IntegerMod> c = {
+    //     { 1_im, -4_im, -2_im, -3_im},
+    //     {-1_im, -4_im, -3_im, -4_im},
+    //     { 1_im,  8_im,  6_im,  5_im},
+    //     { 1_im,  4_im,  2_im,  5_im}};
+    // cerr << a << endl;
+    Matrix<Frac> a = {
+        {-5_fi, -3_fi,  1_fi, -3_fi},
+        { 5_fi,  4_fi, -1_fi,  2_fi},
+        {-5_fi, -2_fi,  3_fi, -2_fi},
+        { 9_fi,  4_fi, -1_fi,  6_fi}};
+    Matrix<Frac> b = {
+        {-1_fi, -5_fi,  1_fi,  3_fi},
+        { 3_fi,  8_fi, -1_fi, -4_fi},
+        {-3_fi, -4_fi,  3_fi,  2_fi},
+        { 3_fi,  6_fi, -1_fi, -2_fi}};
+    Matrix<Frac> c = {
+        { 1_fi, -4_fi, -2_fi, -3_fi},
+        {-1_fi, -4_fi, -3_fi, -4_fi},
+        { 1_fi,  8_fi,  6_fi,  5_fi},
+        { 1_fi,  4_fi,  2_fi,  5_fi}};
+    cout << LinearOperator<Frac>(a).GetJNF() << endl;
+    cout << LinearOperator<Frac>(b).GetJNF() << endl;
+    cout << LinearOperator<Frac>(c).GetJNF() << endl;
+    /* We see that Jordan normal forms of A and B are equal, but C is not, so
+     * A and B are the same operators
+     * C is different from A and B
+     */
+    // cerr << Poly<Frac>({0_fi, 1_fi}) / Poly<Frac>::ONE() << endl;
     return 0;
 }
 
 int solve2() {
-    Matrix<Frac, 4> a = 
-       {{-5_fi, -5_fi, -6_fi,  9_fi},
-        { 5_fi,  5_fi,  6_fi, -9_fi},
-        { 4_fi,  4_fi,  3_fi, -6_fi},
-        {-4_fi, -4_fi, -3_fi,  6_fi}};
-    cout << "Basis intersection:\n";
-    LinearOperator phi(a);
-    auto intersection = phi.Im().inter(phi.ker());
-    for (const auto& vec : intersection.GetBasis()){
-        cout << vec << endl;
-    }
-    cout << "Basis sum:\n";
-    auto sum = phi.Im() + phi.ker();
-    for (const auto& vec : sum.GetBasis()) {
-        cout << vec << endl;
-    }
+    Matrix<Frac> phi = {
+        { 4_fi,  3_fi, -1_fi,  0_fi,  0_fi, 0_fi},
+        { 0_fi,  6_fi, -1_fi,  0_fi,  0_fi, 0_fi},
+        { 0_fi,  2_fi,  3_fi,  0_fi,  0_fi, 0_fi},
+        {-3_fi, -2_fi,  4_fi,  2_fi, -1_fi, 0_fi},
+        { 6_fi,  1_fi, -8_fi,  4_fi,  6_fi, 0_fi},
+        {-3_fi, -1_fi,  4_fi, -2_fi, -2_fi, 5_fi}};
+    auto J = LinearOperator<Frac>(phi).GetJNF();
+    cout << "Jordan normal form:\n";
+    cout << J << endl;
+    auto C = LinearOperator<Frac>(phi).GetJordanBasis();
+    C *= 18_fi; // Make numbers integer
+    cout << "Jordan basis:\n";
+    cout << C << endl;
+    assert(C.Inverse() * phi * C == J);
     return 0;
 }
 
 int solve3() {
-    Matrix<Frac, 4> a =
-       {{-2_fi, -2_fi,   7_fi, -4_fi},
-        { 4_fi,  4_fi, -10_fi,  5_fi},
-        { 0_fi,  0_fi,  -2_fi,  2_fi},
-        { 0_fi,  0_fi,  -4_fi,  4_fi}};
-    Vector<Frac, 4> v = {9_fi, 1_fi, -1_fi, 5_fi};
-    LinearOperator phi(a);
-    LinearOperator psi(a.Transpose());
-    VectorSpace im = phi.Power(4).Im(); // By Stabilization Lemma Power can be only 4
-    VectorSpace ker = psi.Power(4).ker(); // By Stabilization Lemma Power can be only 4  
-    assert((im.inter(ker).dim() == 0  && (im + ker).dim() == 4));
-    Matrix<Frac, 4> D;
-    Matrix<Frac, 4> basisKer;
-    for (size_t i = 0; i < im.dim(); ++i) {
-        for (size_t j = 0; j < 4; ++j) {
-            D[j][i] = im.GetBasis()[i][j];
-        }
-    }
-    for (size_t i = 0; i < im.dim(); ++i) {
-        for (size_t j = 0; j < 4; ++j) {
-            D[j][i + im.dim()] = ker.GetBasis()[i][j];
-            basisKer[j][i + im.dim()] = ker.GetBasis()[i][j];
-        }
-    }
-    Matrix<Frac, 4, 1> x = D.Inverse() * static_cast<Matrix<Frac, 4, 1>>(v);
-    cout << "im part: " << Vector(im.GetBasisMatrix() * x) << endl;
-    cout << "ker part: " << Vector(basisKer * x) << endl;
-    return 0;
-}
-
-int solve4() {
-    Matrix<Integer, 4> a = 
-       {{-1_i, -2_i,  7_i,  4_i},
-        { 4_i,  4_i, -6_i, -3_i},
-        {-3_i, -2_i, -3_i, -2_i},
-        { 6_i,  4_i,  6_i,  4_i}};
-
-    cout << a.CharPoly() << endl; // x^4 - 4x^3 + 4x^2 = (x - 2) ^ 2 * x ^ 2
-    Matrix<Frac, 4> fa = 
-       {{-1_fi, -2_fi,  7_fi,  4_fi},
-        { 4_fi,  4_fi, -6_fi, -3_fi},
-        {-3_fi, -2_fi, -3_fi, -2_fi},
-        { 6_fi,  4_fi,  6_fi,  4_fi}};
-    LinearOperator phi(fa);
-    Frac l1 = 2_fi;
-    Frac l2 = 0_fi;
-    auto id = LinearOperator<Frac, 4>::ONE;
-    auto im = (phi - id * l1).Power(4).ker(); 
-    // For integer results, can be done without this line, but with it this is more beautiful
-    im.GetBasis()[1] *= 2_fi;
-    auto ker = (phi - id * l2).Power(4).ker(); 
-    LinearOperator psi(im, ker);
+    Matrix<Frac> G = {
+        {-1_fi,  2_fi, -1_fi},
+        { 1_fi, -1_fi, -1_fi},
+        { 2_fi, -3_fi,  1_fi}};
+    Matrix<Frac> A = {
+        {-4_fi,  8_fi, -8_fi},
+        {-3_fi,  6_fi, -6_fi},
+        { 1_fi, -1_fi,  0_fi}};
+    Matrix<Frac> F = {
+        {1_fi, -1_fi,  2_fi},
+        {1_fi, -2_fi,  3_fi},
+        {1_fi,  1_fi, -1_fi}};
+    Matrix<Frac> B = {
+        {-4_fi,  0_fi, -1_fi},
+        { 8_fi, -4_fi,  8_fi},
+        { 8_fi, -4_fi,  8_fi}};
+    LinearOperator<Frac> phi(G * A * G.Inverse());
+    LinearOperator<Frac> psi(F * B * F.Inverse());
+    cout << phi.GetData() << endl;
     cout << psi.GetData() << endl;
+    cout << "a)" << endl << (phi * psi).GetData() << endl;
+    cout << "b)\n";
+    auto sum = phi.ker() + psi.ker();
+    for (const auto& vec : sum.GetBasis()) {
+        cout << vec << endl;
+    }
+    cout << "\nc)\n";
+    auto inter = phi.Im().inter(psi.Im());
+    for (const auto& vec : inter.GetBasis()) {
+        cout << vec << endl;
+    }
     return 0;
 }
+int solve4() {
+    Poly<Frac> t({0_fi, 1_fi});
+    Matrix<Poly<Frac>> A = {
+        {    2_fi,     1_fi,  0_fi,  0_fi,  0_fi},
+        {    0_fi,     2_fi,  0_fi,  0_fi,  0_fi},
+        {t + 1_fi,     0_fi, -2_fi,  0_fi,    t},
+        {    0_fi, t - 1_fi,  1_fi, -2_fi,  0_fi},
+        {    0_fi,     0_fi,  0_fi,  0_fi, -2_fi}};
+    auto cp = A.CharPoly();
+    for (auto [power, elem] : cp.GetCoefficients()) {
+        assert(elem.deg() == 0);
+    }
+    // As we see all coefficients are integers so let's convert the polinomial to numbers
+    Poly<Frac> numcp;
+    for (auto [power, elem] : cp.GetCoefficients()) {
+        numcp += Poly<Frac>(elem.GetCoefficients()[0], power);
+    }
+    std::vector<Frac> roots;
+    for (auto [root, cnt] : numcp.try_solve()) {
+        roots.push_back(root);
+    }
+    auto e = Matrix<Poly<Frac>>::IdentityMatrix(5);
+    // Commented out because it produces too much output
+    /* for (const auto& root : roots) {
+        auto C = A - Poly<Frac>(root) * e;
+        cout << C << endl;
+        cout << C.Power(2) << endl;
+        cout << C.Power(3) << endl;
+        cout << C.Power(4) << endl;
+    } */
+    // From this we can see that rank of (A - 2E) is 4
+    // (A - 2E)^2 is 3
+    // (A - 2E)^2 is 3
+    //
+    // rank of (A + 2E) is different for x = 0 and x ≠ 0
+    // same for (A + 2E)^2
+    // ranks of (A + 2e)^3 and (A + 2E)^4 are 2
+    // So, there are only two cases: x = 0 and x ≠ 0
 
+    Matrix<Frac> B(5, 5);
+    Matrix<Frac> C(5, 5);
+    for (size_t i = 0; i < 5; ++i) {
+        for (size_t j = 0; j < 5; ++j) {
+            B[i][j] = A[i][j](0_fi);
+            C[i][j] = A[i][j](1_fi);
+        }
+    }
+    cout << "x = 0:\n" << LinearOperator<Frac>(B).GetJNF() << endl;
+    cout << "x ≠ 0:\n" << LinearOperator<Frac>(C).GetJNF() << endl;
+    // See tex
+    return 0;
+}
 int solve5() {
-    Matrix<Frac, 3> G =
-       {{-1_fi, -1_fi, 2_fi},
-        {-1_fi, -2_fi, 1_fi},
-        { 1_fi,  2_fi, 0_fi}};
-    Matrix<Frac, 3, 1> v = {{-6_fi}, {-8_fi}, {6_fi}};
-    Matrix<Frac, 3, 1> u = {{-8_fi}, {2_fi}, {-8_fi}};
-    // C = G^-1 * A * G
-    // A = G * C * G^-1
-    // Av = u
-    // G * C * G^-1 v = u
-    // CG^-1v = G^-1u
-    auto gv = G.Inverse() * v;
-    auto gu = G.Inverse() * u;
-    Matrix<Frac, 3> C =
-      {{ 0_fi,  1_fi,  6_fi},
-       { 1_fi,  0_fi, -3_fi},
-       {-2_fi, -1_fi,  0_fi}};
-    C[0][0] = (gu[0][0] - C[0][1] * gv[1][0] - C[0][2] * gv[2][0]) / gv[0][0];
-    C[1][1] = (gu[1][0] - C[1][0] * gv[0][0] - C[1][2] * gv[2][0]) / gv[1][0];
-    C[2][2] = (gu[2][0] - C[2][0] * gv[0][0] - C[2][1] * gv[1][0]) / gv[2][0];
-    auto A = G * C * G.Inverse();
-    assert(A * v == u);
-    cout << A;
+    // I am too lazy to write BilinearForm class sorry(
+    Matrix<Frac> B = {
+        { 0_fi,  0_fi,  2_fi, -3_fi},
+        { 0_fi,  0_fi, -3_fi,  5_fi},
+        { 2_fi, -3_fi,  2_fi, -4_fi},
+        {-3_fi,  5_fi, -4_fi,  5_fi}};
+    // Applying Jackobian method for reversed basis
+    assert(Det(B) != 0_fi);
+    assert(Det(B.Slice(3, 3, 1, 1)) != 0_fi);
+    assert(Det(B.Slice(2, 2, 2, 2)) != 0_fi);
+    assert(Det(B.Slice(1, 1, 3, 3)) != 0_fi); 
+    Vector<Frac> v = {1_fi, 1_fi, 1_fi, 1_fi};
+    VectorSpace<Frac> sp(std::vector({v}));
+    sp.MakeFullBasis();
+    auto basis = sp.GetBasis();
+    reverse(basis.begin(), basis.end());
+    std::vector<Vector<Frac>> new_basis(4, Vector<Frac>(4));
+    for (int i = 3; i >= 0; --i) {
+        new_basis[i] = basis[i];
+        for (int j = i + 1; j < 4; ++j) {
+            Frac beta1 = (static_cast<Matrix<Frac>>(basis[i]).Transpose() * B * new_basis[j])[0][0];
+            Frac beta2 = (static_cast<Matrix<Frac>>(new_basis[j]).Transpose() * B * new_basis[j])[0][0];
+            // cerr << basis[i] << ' ' << new_basis[j] << ' ' << beta1 << ' ' << beta2 << ' ' << i << ' '  << j << endl;
+            new_basis[i] -= new_basis[j] * (beta1 / beta2);
+        }
+    }
+    new_basis[0] *= 19_fi; // Making basis integer
+    new_basis[1] *= 4_fi;
+    auto C = VectorSpace(new_basis).GetBasisMatrix();
+    cout << "New basis:\n";
+    for (const auto& elem : new_basis) {
+        cout << elem << endl;
+    }
+    cout << "Matrix in this basis:\n";
+    cout << C.Transpose() * B * C;
     return 0;
 }
 

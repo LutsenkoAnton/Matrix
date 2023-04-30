@@ -3,10 +3,12 @@
 #include "mymath.h"
 #include "myconcepts.h"
 
+#include <cstdlib>
 #include <functional>
 #include <initializer_list>
 #include <iostream>
 #include <map>
+#include <utility>
 #include <vector>
 
 template <RingWithOne T>
@@ -14,16 +16,16 @@ class Poly {
 public:
     Poly() {}
     Poly(const Poly& other) = default;
-    Poly(const Poly&& other) = default;
+    Poly(Poly&& other) = default;
     Poly& operator=(const Poly& other) = default;
-    Poly& operator=(const Poly&& other) = default;
-    Poly(const T& coefficient): Poly(coefficient, 0) {
+    Poly& operator=(Poly&& other) = default;
+    Poly(const T& coefficient): Poly(coefficient, 0) {}
+    Poly(const T& coefficient, size_t power): coefficients_({{power, coefficient}}) {
         Clean();
     }
-    Poly(const T& coefficient, size_t power): coefficients_({{power, coefficient}}) {}
     Poly(const std::vector<T>& coefficients) {
         for (size_t power = 0; power < coefficients.size(); ++power) {
-            if (coefficients[power] != T::ZERO) {
+            if (coefficients[power] != T::ZERO()) {
                 coefficients_[power] = coefficients[power];
             }
         }
@@ -34,11 +36,35 @@ public:
     Poly(const std::initializer_list<T>& coefficients): Poly(std::vector<T>(coefficients)) {}
 
     T operator() (const T& x) const {
-        T sum = T::ZERO;
+        T sum = T::ZERO();
         for (const auto& [power, coefficient] : coefficients_) {
             sum += fastpow(x, power) * coefficient;
         }
         return sum;
+    }
+
+    std::vector<std::pair<T, size_t>> try_solve() const {
+        std::cout << "Trying to solve: " << *this << std::endl;
+        Poly copy(*this);
+        T root = T::ZERO();
+        for (int i = 0; i < 100; ++i) {
+            root -= T::ONE();
+        }
+        std::cout << "Found solutions: ";
+        std::vector<std::pair<T, size_t>> ans;
+        for (int i = -100; i <= 100; ++i, root += T::ONE()) {
+            size_t cnt = 0;
+            while (copy != ZERO() && copy(root) == T::ZERO()) {
+                copy = copy.try_devide(Poly({-root, T::ONE()}));
+                ++cnt;
+            }
+            if (cnt != 0) {
+                ans.push_back({root, cnt});
+                std::cout << "(" << root << ", " << cnt << ") ";
+            }
+        }
+        std::cout << std::endl;
+        return ans;
     }
 
     bool operator==(const Poly& other) const = default;
@@ -73,19 +99,20 @@ public:
         return ans;
     }
 
-    Poly operator/(const Poly& other) const requires Field<T> {
-        if (*this == Poly::ZERO) {
-            return Poly::ZERO;
+    Poly try_devide(const Poly& other) const {
+        if (*this == Poly::ZERO()) {
+            return Poly::ZERO();
         }
         size_t n = deg();
         size_t m = other.deg();
         if (n < m) {
-            return Poly::ZERO;
+            return Poly::ZERO();
         }
         Poly<T> curans;
         T am = other.SeniorCoefficient();
         auto cpthis = *this;
         for (int i = n - m; i >= 0; --i) {
+            if (i + m != cpthis.deg()) continue;
             T an = cpthis.SeniorCoefficient();
             curans += Poly(an / am, i);
             cpthis -= other * Poly(an / am, i);
@@ -94,9 +121,21 @@ public:
         return curans;
     }
 
+    Poly operator/(const Poly& other) const requires Field<T> {
+        return try_devide(other);
+    }
+
+    Poly operator/(const T& other) const requires Field<T> {
+        Poly ans = *this;
+        for (auto& [power, coeff] : ans.coefficients_) {
+            coeff /= other;
+        }
+        return ans;
+    }
+
     Poly operator%(const Poly& other) const requires Field<T> {
-        if (*this == Poly::ZERO) {
-            return Poly::ZERO;
+        if (*this == Poly::ZERO()) {
+            return Poly::ZERO();
         }
         size_t n = deg();
         size_t m = other.deg();
@@ -104,6 +143,7 @@ public:
         T am = other.SeniorCoefficient();
         auto cpthis = *this;
         for (int i = n - m; i >= 0; --i) {
+            if (i + m != cpthis.deg()) continue;
             T an = cpthis.SeniorCoefficient();
             curans += Poly(an / am, i);
             cpthis -= other * Poly(an / am, i);
@@ -120,6 +160,9 @@ public:
     }
     Poly& operator*=(const Poly& other) {
         return *this = *this * other;
+    }
+    Poly& operator/=(const T& other) requires Field<T> {
+        return *this = *this / other;
     }
     Poly& operator/=(const Poly& other) requires Field<T> {
         return *this = *this / other;
@@ -138,7 +181,7 @@ public:
 
     void Clean() {
         for (auto it = coefficients_.begin(); it != coefficients_.end();) {
-            if (it -> second == T::ZERO) {
+            if (it -> second == T::ZERO()) {
                 it = coefficients_.erase(it);
             } else {
                 ++it;
@@ -147,7 +190,7 @@ public:
     }
 
     T SeniorCoefficient() const {
-        if (coefficients_.empty()) return T::ZERO;
+        if (coefficients_.empty()) return T::ZERO();
         return coefficients_.begin() -> second;
     }
 
@@ -158,15 +201,15 @@ public:
 
     friend std::ostream& operator<<(std::ostream& stream, const Poly& polynomial) {
         if (polynomial.coefficients_.empty()) {
-            stream << T::ZERO;
+            stream << T::ZERO();
             return stream;
         }
         bool first = true;
         for (const auto& [power, coefficient] : polynomial.coefficients_) {
-            if (coefficient == T::ZERO) continue;
+            if (coefficient == T::ZERO()) continue;
             if (first) {
                 first = false;
-                if (coefficient != T::ONE || power == 0) {
+                if (coefficient != T::ONE() || power == 0) {
                     stream << coefficient;
                 }
                 if (power == 0) {
@@ -179,8 +222,8 @@ public:
                 stream << "x^" << power;
                 continue;
             }
-            stream << ' ' << (coefficient < T::ZERO ? '-' : '+') << ' ';
-            if (abs(coefficient) != T::ONE || power == 0) {
+            stream << ' ' << (coefficient < T::ZERO() ? '-' : '+') << ' ';
+            if (abs(coefficient) != T::ONE() || power == 0) {
                 stream << abs(coefficient);
             }
             if (power == 0) {
@@ -195,8 +238,12 @@ public:
         return stream;
     }
 
-    static inline const Poly ZERO = Poly(T::ZERO);
-    static inline const Poly ONE = Poly(T::ONE);
+    static Poly ZERO() {
+        return Poly();
+    }
+    static Poly ONE() {
+        return Poly(T::ONE());
+    }
 
 private:
     std::map<size_t, T, std::greater<size_t>> coefficients_;

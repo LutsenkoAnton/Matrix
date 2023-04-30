@@ -2,15 +2,17 @@
 
 #include "integer.h"
 #include "myconcepts.h"
+#include "poly.h"
 
 #include <compare>
 #include <iostream>
+#include <type_traits>
 
 template<EuclideanRing T>
 class Fraction {
 public:
-    Fraction() : numerator_(T::ZERO), denominator_(T::ONE) {}
-    Fraction(T a) : numerator_(a), denominator_(T::ONE) {}
+    Fraction() : numerator_(T::ZERO()), denominator_(T::ONE()) {}
+    Fraction(T a) : numerator_(a), denominator_(T::ONE()) {}
     Fraction(T a, T b) : numerator_(a), denominator_(b) {
         Shorten();
     }
@@ -66,7 +68,7 @@ public:
     }
 
     friend std::ostream& operator<<(std::ostream& stream, const Fraction& fraction) {
-        if (fraction.denominator_ == T::ONE) {
+        if (fraction.denominator_ == T::ONE()) {
             stream << fraction.numerator_;
             return stream;
         }
@@ -74,8 +76,12 @@ public:
         return stream;
     }
 
-    static inline const Fraction ZERO = Fraction();
-    static inline const Fraction ONE = Fraction(T::ONE);
+    static Fraction ZERO() {
+        return Fraction();
+    }
+    static Fraction ONE() {
+        return Fraction(T::ONE());
+    }
 
 private:
     void Shorten() {

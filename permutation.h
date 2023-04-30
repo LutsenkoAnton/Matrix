@@ -1,15 +1,16 @@
 #pragma once
 
+#include <algorithm>
 #include <array>
 #include <initializer_list>
 #include <iostream>
 #include <numeric>
 #include <vector>
 
-template<size_t n>
 class Permutation {
 public:
-    Permutation() {
+    Permutation(size_t n) {
+        data_.resize(n);
         std::iota(data_.begin(), data_.end(), 0);
     }
     Permutation(const std::vector<size_t>& data) : data_(data) {}
@@ -46,8 +47,8 @@ public:
     }
 
     Permutation operator*(const Permutation& other) const {
-        Permutation ans;
-        for (size_t i = 0; i < n; ++i) {
+        Permutation ans(size());
+        for (size_t i = 0; i < size(); ++i) {
             ans.data_[i] = data_[other.data_[i]];
         }
         return ans;
@@ -60,14 +61,14 @@ public:
     bool operator!=(const Permutation& other) const = default;
 
     Permutation Inverse() const {
-        Permutation ans;
-        for (size_t i = 0; i < n; ++i) {
+        Permutation ans(size());
+        for (size_t i = 0; i < size(); ++i) {
             ans.data_[data_[i]] = i;
         }
         return ans;
     }
     Permutation Power(size_t indicator) const {
-        if (indicator == 0) return Permutation();
+        if (indicator == 0) return Permutation(size());
         if (indicator % 2 == 0) return (*this * *this).Power(indicator / 2);
         return Power(indicator - 1) * *this;
     }
@@ -77,12 +78,13 @@ public:
     }
 
     size_t size() const {
-        return n;
+        return data_.size();
     }
+
     int sign() const {
-        std::array<bool, n> used = {};
+        std::vector<bool> used(size(), false);
         size_t cmp_comps = 0;
-        for (size_t i = 0; i < n; ++i) {
+        for (size_t i = 0; i < size(); ++i) {
             if (!used[i]) {
                 size_t vertex = i;
                 while (!used[vertex]) {
@@ -92,39 +94,34 @@ public:
                 ++cmp_comps;
             }
         }
-        return ((n - cmp_comps) % 2 == 0 ? 1 : -1);
+        return ((size() - cmp_comps) % 2 == 0 ? 1 : -1);
     }
 
-    template<size_t n_>
     friend class AllPermutations;
 
-    static inline const Permutation ZERO = Permutation(); // This is to satisfy RingWithOne
-    static inline const Permutation ONE = Permutation();
-
 private:
-    std::array<size_t, n> data_;
+    std::vector<size_t> data_;
 };
 
 template<size_t n>
-std::ostream& operator<<(std::ostream& stream, const Permutation<n>& p) {
+std::ostream& operator<<(std::ostream& stream, const Permutation& p) {
     for (size_t i = 0; i < p.size(); ++i) {
         stream << p[i] + 1 << ' ';
     }
     return stream;
 }
 
-template<size_t n>
 class AllPermutations {
 public:
     class Iterator {
     public:
-        Iterator(bool is_end = false): is_end_(is_end) {}
+        Iterator(size_t n, bool is_end = false): p_(n), is_end_(is_end), n_(n) {}
 
         Iterator operator++() {
-            for (ssize_t i = n - 2; i >= 0; --i) {
+            for (ssize_t i = n_ - 2; i >= 0; --i) {
                 if (p_.data_[i + 1] > p_.data_[i]) {
-                    size_t to_swap = n - 1;
-                    for (size_t j = i; j < n; ++j) {
+                    size_t to_swap = n_ - 1;
+                    for (size_t j = i; j < n_; ++j) {
                         if (p_.data_[j] > p_.data_[i]) {
                             to_swap = j;
                         }
@@ -143,7 +140,7 @@ public:
             return cp;
         }
 
-        const Permutation<n>& operator*() const {
+        const Permutation& operator*() const {
             return p_;
         }
 
@@ -157,14 +154,19 @@ public:
         }
 
     private:
-        Permutation<n> p_;
+        Permutation p_;
         bool is_end_;
+        size_t n_;
     };
 
+    AllPermutations(size_t n): n_(n) {}
+
     Iterator begin() const {
-        return Iterator(false);
+        return Iterator(n_, false);
     }
     Iterator end() const {
-        return Iterator(true);
+        return Iterator(n_, true);
     }
+private:
+    size_t n_;
 };

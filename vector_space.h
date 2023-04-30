@@ -1,5 +1,6 @@
 #pragma once
 
+#include "exceptions.h"
 #include "matrix.h"
 #include "myconcepts.h"
 #include "vector.h"
@@ -8,12 +9,13 @@
 #include <cstddef>
 #include <vector>
 
-template<Field T, size_t n>
+template<typename T>
 class VectorSpace {
 public:
-    template<size_t m>
-    VectorSpace(const std::array<Vector<T, n>, m>& vectors) { // Linear span
-        Matrix<T, n, m> a;
+    VectorSpace(const std::vector<Vector<T>>& vectors) { // Linear span
+        size_t m = vectors.size();
+        size_t n = vectors[0].size();
+        Matrix<T> a(n, m);
         for (size_t i = 0; i < m; ++i) {
             for (size_t j = 0; j < n; ++j) {
                 a[j][i] = vectors[i][j];
@@ -22,7 +24,7 @@ public:
         a.Gauss();
         size_t j = 0;
         for (size_t i = 0; i < n; ++i) {
-            while (j < m && a[i][j] == T::ZERO) {
+            while (j < m && a[i][j] == T::ZERO()) {
                 j++;
             }
             if (j == m) {
@@ -32,13 +34,14 @@ public:
         }
     }
 
-    template<size_t m>
-    VectorSpace(Matrix<T, m, n> a) { // FSS
+    VectorSpace(Matrix<T> a) { // FSS
+        size_t m = a.nsize();
+        size_t n = a.msize();
         a.Gauss();
         std::vector<size_t> base_indexes;
         size_t j = 0;
         for (size_t i = 0; i < m; ++i) {
-            while (j < n && a[i][j] == T::ZERO) {
+            while (j < n && a[i][j] == T::ZERO()) {
                 j++;
             }
             if (j == n) {
@@ -49,11 +52,11 @@ public:
         size_t current_j = 0;
         for (size_t i = 0; i < n; ++i) {
             if (current_j == base_indexes.size() || i != base_indexes[current_j]) {
-                Vector<T, n> new_vector;
+                Vector<T> new_vector(n);
                 for (size_t j = 0; j < base_indexes.size(); ++j) {
                     new_vector[base_indexes[j]] = -a[j][i];
                 }
-                new_vector[i] = T::ONE;
+                new_vector[i] = T::ONE();
                 basis.push_back(new_vector);
             } else {
                 ++current_j;
@@ -65,45 +68,60 @@ public:
         return basis.size();
     }
 
+    size_t vector_size() const {
+        return basis[0].size();
+    }
+
     void MakeFullBasis() {
-        Matrix<T, n> a = GetBasisMatrix();
+        size_t n = basis[0].size();
+        Matrix<T> a = GetBasisMatrix();
         a.Gauss();
         size_t j = 0;
+        size_t m = basis.size();
         for (size_t i = 0; i < n; ++i) {
-            while (j < n && a[i][j] == 0) {
+            while (j < m && a[i][j] == T::ZERO()) {
                 j++;
-                if (a[i][j] == 0) {
-                    Vector<T, n> new_vector;
-                    new_vector[j] = T::ONE;
+                if (j < m && a[i][j] == T::ZERO()) {
+                    Vector<T> new_vector(n);
+                    new_vector[j] = T::ONE();
                     basis.push_back(new_vector);
                 }
             }
-            if (j == n) {
+            if (j == m) {
                 break;
             }
         }
+        for (;j < n;++j) {
+            Vector<T> new_vector(n);
+            new_vector[j] = T::ONE();
+            basis.push_back(new_vector);
+        }
     }
 
-    const std::vector<Vector<T, n>>& GetBasis() const {
+    const std::vector<Vector<T>>& GetBasis() const {
         return basis;
     }
 
-    std::vector<Vector<T, n>>& GetBasis() {
+    std::vector<Vector<T>>& GetBasis() {
         return basis;
     }
 
-    Matrix<T, n> GetBasisMatrix() const {
-        Matrix<T, n> ans;
-        for (size_t i = 0; i < basis.size(); ++i) {
+    Matrix<T> GetBasisMatrix() const {
+        size_t n = basis[0].size();
+        size_t m = basis.size();
+        Matrix<T> ans(n, m);
+        for (size_t i = 0; i < m; ++i) {
             for (size_t j = 0; j < n; ++j) {
                 ans[j][i] = basis[i][j];
             }
         }
         return ans;
     }
-    Matrix<T, n> GetRowBasisMatrix() const {
-        Matrix<T, n> ans;
-        for (size_t i = 0; i < basis.size(); ++i) {
+    Matrix<T> GetRowBasisMatrix() const {
+        size_t n = basis[0].size();
+        size_t m = basis.size();
+        Matrix<T> ans(m, n);
+        for (size_t i = 0; i < m; ++i) {
             for (size_t j = 0; j < n; ++j) {
                 ans[i][j] = basis[i][j];
             }
@@ -111,38 +129,46 @@ public:
         return ans;
     }
 
-    Matrix<T, n> GetEquasion() const {
+    Matrix<T> GetEquasion() const {
         return VectorSpace(GetRowBasisMatrix()).GetRowBasisMatrix();
     }
 
     VectorSpace operator+(const VectorSpace& other) {
-        std::array<Vector<T, n>, 2 * n> sum_vectors;
+        if (vector_size() != other.vector_size()) {
+            throw WrongSizeException();
+        }
+        size_t n1 = dim();
+        size_t n2 = other.dim();
+        std::vector<Vector<T>> sum_vectors(n1 + n2, Vector<T>(vector_size()));
         for (size_t i = 0; i < basis.size(); ++i) {
             sum_vectors[i] = basis[i];
         }
         for (size_t i = 0; i < other.basis.size(); ++i) {
-            sum_vectors[i + n] = other.basis[i];
+            sum_vectors[i + n1] = other.basis[i];
         }
         return VectorSpace(sum_vectors);
     }
 
     VectorSpace inter(const VectorSpace& other) {
-        Matrix<T, n> a = GetEquasion();
-        Matrix<T, n> b = other.GetEquasion();
-        Matrix<T, 2 * n, n> c;
-        for (size_t i = 0; i < n; ++i) {
-            for (size_t j = 0; j < n; ++j) {
+        if (vector_size() != other.vector_size()) {
+            throw WrongSizeException();
+        }
+        Matrix<T> a = GetEquasion();
+        Matrix<T> b = other.GetEquasion();
+        Matrix<T> c(a.nsize() + b.nsize(), a.msize());
+        for (size_t i = 0; i < a.nsize(); ++i) {
+            for (size_t j = 0; j < a.msize(); ++j) {
                 c[i][j] = a[i][j];
             }
         }
-        for (size_t i = 0; i < n; ++i) {
-            for (size_t j = 0; j < n; ++j) {
-                c[i + n][j] = b[i][j];
+        for (size_t i = 0; i < b.nsize(); ++i) {
+            for (size_t j = 0; j < b.msize(); ++j) {
+                c[i + a.nsize()][j] = b[i][j];
             }
         }
         return VectorSpace(c);
     }
 
 private:
-    std::vector<Vector<T, n>> basis;
+    std::vector<Vector<T>> basis;
 };
